@@ -2,6 +2,23 @@ require 'test_helper'
 
 class BookTest < ActiveSupport::TestCase
   # Start by using Shoulda's ActiveRecord matchers
+  
+  should belong_to(:category)
+  should have_many(:book_authors)
+  should have_many(:authors).through(:book_authors)
+  
+  should validate_presence_of(:title)
+  
+  should allow_value(1000).for(:units_sold)
+  should_not allow_value(-1000).for(:units_sold)
+  should_not allow_value(3.14159).for(:units_sold)
+  should_not allow_value("bad").for(:units_sold)
+  
+  #should allow_value(1.year.ago).for(:proposal_date)
+  should_not allow_value(1.week.from_now).for(:proposal_date)
+  should_not allow_value("bad").for(:proposal_date)
+  should_not allow_value(nil).for(:proposal_date)
+
 
   # TODO: Relationship macros
 
@@ -48,24 +65,24 @@ class BookTest < ActiveSupport::TestCase
 
     # and provide a teardown method as well
     teardown do
-      # @ruby.destroy
-      # @rails.destroy
-      # @testing.destroy
-      # @dblack.destroy
-      # @michael.destroy
-      # @aslak.destroy
-      # @dchel.destroy
-      # @wgr.destroy
-      # @r3t.destroy
-      # @rfm.destroy
-      # @rspec.destroy
-      # @agt.destroy
-      # @ba1.destroy
-      # @ba2.destroy
-      # @ba3.destroy
-      # @ba4.destroy
-      # @ba5.destroy
-      # @ba6.destroy
+       @ruby.destroy
+       @rails.destroy
+       @testing.destroy
+       @dblack.destroy
+       @michael.destroy
+       @aslak.destroy
+       @dchel.destroy
+       @wgr.destroy
+       @r3t.destroy
+       @rfm.destroy
+       @rspec.destroy
+       @agt.destroy
+       @ba1.destroy
+       @ba2.destroy
+       @ba3.destroy
+       @ba4.destroy
+       @ba5.destroy
+       @ba6.destroy
     end
 
     # test one of each factory (not really required, but not a bad idea)
@@ -102,14 +119,17 @@ class BookTest < ActiveSupport::TestCase
     #   - for_category
 
     should "have all the books listed alphabetically by title" do
-
+		assert_equal ["Agile Testing", "Rails 3 Tutorial", "Ruby for Masters", "The RSpec Book", "The Well-Grounded Rubyist"], Book.by_title_map{|b| b.title}
     end
 
     should "have all the books listed alphabetically by category, then by title" do
 
+		assert_equal ["Rails 3 Tutorial", "Ruby for Masters", "The Well-Grounded Rubyist", "Agile Testing", "The RSpec Book"], Book.by_category.map{|b| b.title}
     end
 
     should "have all the published books" do
+	
+		assert_equal ["Rails 3 Tutorial", "The RSpec Book", "The Well-Grounded Rubyist"], Book.published.by_title.map{|b| b.title}
 
     end
 
@@ -122,6 +142,7 @@ class BookTest < ActiveSupport::TestCase
     end
 
     should "have all the books for a particular category" do
+		assert_equal ["Rails 3 Tutorial"], Book.for_category(@rails.id).by_title.map{|b| b.title}
 
     end
 
@@ -135,19 +156,29 @@ class BookTest < ActiveSupport::TestCase
 
     should "allow for a contract date in the past after the proposal date" do
       # take advantage of the fact that the default proposal date is 1 year ago...
+	  big_ruby_book = Factory.build(:book, :contract_date => 50.weeks.ago, :category => @ruby, :title => "The Big Book of Ruby")
+	  assert big_ruby_book.valid?
 
     end
 
     should "allow for contract and published dates to be nil" do
       # make pub date also nil otherwise it will fail b/c default pub date is 3 weeks ago, which is before a nil contract date
 
+	big_ruby_book = Factory.build(:book, :contract_date => nil, :published_date => nil, :category => @ruby, :title => "The Big Book of Ruby")
+	assert big_ruby_book.valid?
     end
 
     should "not allow for a contract date in the past before the proposal date" do
+	
+	big_ruby_book = Factory.build(:book, :contract_date => 14.months.ago, :category => @ruby, :title => "The Big Book of Ruby")
+	deny big_ruby_book.valid?
 
     end
 
     should "not allow for a contract date in the future" do
+	
+	big_ruby_book = Factory.build(:book, :contract_date => 1.month.from_now, :category => @ruby, :title => "The Big Book of Ruby")
+	deny big_ruby_book.valid?
 
     end
 
@@ -172,6 +203,11 @@ class BookTest < ActiveSupport::TestCase
     # TESTING CUSTOM VALIDATIONS
     #   - test the custom validation 'category_is_active_in_system'
     should "identify an inactive category as invalid" do
+	
+	@python = Factory.create(:category, :name => "Python", :active => false)
+	python_book = Factory.build(:book, :category => @python, :title => "Python!")
+	deny python_book.valid?
+	@python.destroy
 
     end
   end
