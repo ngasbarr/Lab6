@@ -11,7 +11,12 @@ class Book < ActiveRecord::Base
   
   # Date validations using validates_timeliness gem
   # see https://github.com/adzap/validates_timeliness for documentation
-
+  
+	validates_date :proposal_date, :on_or_before => lambda {Date.current}
+	validates_date :contract_date, :on_or_before => lambda {Date.current}, :allow_blank => true
+	validates_date :proposal_date, :on_or_before => lambda {:contract_date}
+	validates_date :published_date, :on_or_before => lambda {Date.current}, :allow_blank => true
+	validates_date :contract_date, :on_or_before => lambda {:published_date}
 
 
 
